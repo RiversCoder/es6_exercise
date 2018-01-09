@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title></title>
+	<style type="text/css">
+		*{margin:0;padding:0;}
+	</style>
+</head>
+<body>
+<script type="text/javascript">
+	
+	//例1
+	/*
+		function * f(){
+			console.log('执行了');
+		}
+
+		var generator = f();
+
+		setTimeout(function(){
+			generator.next();
+		},2000);
+
+		//输出结果：在2s后控制台输出了 '执行了' 
+	*/
+
+	/*
+	//例2
+		function * gen(){
+			yield 123 + 456;
+		}
+
+		let generator = gen();
+
+		console.log(generator.next()); //{value: 579, done: false}
+		console.log(generator.next()); //{value: undefined, done: true}
+	*/
+
+	//例3
+	/*(function (){
+		yield 1; 
+	})();*/
+
+	//控制台打印结果：error:Uncaught SyntaxError: Unexpected number
+
+
+	//例4
+	/*var arr = [1,[[2,3],4],[5,6]];
+	
+	var flat = function * (a){
+		a.forEach(function(item){
+			if(typeof item !== 'number'){
+				yield * falt(item);
+			}else{
+				yield item;
+			}
+		})
+	}
+
+	for(var f of flat(arr)){
+		console.log(f);
+	}
+*/
+	//控制台输出 ( yield不能在普通的function中使用 )
+	//error: Uncaught SyntaxError: Unexpected identifier
+
+
+	//例6
+	/*var arr = [1,[[2,3],4],[5,6]];
+	
+	var flat = function * (a){
+
+		for(let i=0;i<a.length;i++)
+		{	
+			var item = a[i];
+			if(typeof item !== 'number'){
+				yield * flat(item);
+			}else{
+				yield item;
+			}
+		}
+	};
+
+	for(var f of flat(arr)){
+		console.log(f);
+	}*/
+
+	//控制台输出结果：1,2,3,4,5,6
+
+	//例7 -- yield如果用在一个表达式中，必须放在圆括号里面
+	/*
+	function * gen(){
+		//console.log('Hello' + yield); //Uncaught SyntaxError: Unexpected identifier
+		//console.log('Hello' + yield 123); //Uncaught SyntaxError: Unexpected identifier
+		//console.log('Hello' + (yield)); //ok
+		console.log('Hello' + (yield 123)); //ok
+	}	
+
+	var generator = gen();
+	console.log(generator.next()); //{value: 123, done: false}
+
+	*/
+
+	//例8 -- yield语句作为函数参数或者赋值在表达式的右边，可以不加圆括号(建议加上)
+
+	/*
+	function * gen(){
+		let input = yield 123;
+		var lens = len(yield 'a',yield 'b');
+		yield lens.next();
+	}
+
+	function * len(x,y){
+		yield x;
+		yield y;
+		return 123;
+	}
+
+	var gens = gen();
+	console.log(gens.next()); //{value: 123, done: false}
+	console.log(gens.next()); //{value: "a", done: false}
+	console.log(gens.next()); //{value: "b", done: false}
+	console.log(gens.next()); //{value: {…}, done: false}
+
+	*/
+
+	//例9 -- next()方法的带的参数 yield的默认返回值是undefined 如果带参数后，reset的值就会变成参数的值
+
+	/*
+
+	function * f(){
+		for(var i=0;true;i++){
+			var reset = yield i;
+			console.log(reset); //undefined true false undefined
+			if(reset) {
+				i = -1;
+			}
+		}
+	}
+
+	var g = f();
+
+	console.log(g.next()); //{value: 0, done: false}
+	console.log(g.next()); //{value: 1, done: false}
+	console.log(g.next(true)); //{value: 0, done: false} 由于reset的值已经变成true 所以走if语句
+	console.log(g.next(false)); //{value: 1, done: false}
+	console.log(g.next()); //{value: 2, done: false}
+	
+	//意义：可以在Generator函数运行的不同阶段，从外部向内部注入不同的值，从而调整函数的行为
+	
+	*/
+
+	//例10 -- 在第一次使用next方法的参数，表示 "上一个" yield语句返回值 只有第二次使用next(attr),attr才是有效的，第一个next()来启动遍历器对象，所以不用带参数
+
+	/*
+
+	function * foo(x)
+	{
+		var y = 2 * (yield (x + 1)); //y = 2 * undefined = NaN  
+		var z = yield (y / 3); // z = undefined 
+
+		return (x + y + z); // 5 + NaN + undefined 
+	}
+
+	var a = foo(5);
+	console.log(a.next(2)); //{value: 6, done: false} 	2是无效的
+	console.log(a.next(3)); //{value: NaN, done: false} 3是有效的
+	console.log(a.next()); //{value: NaN, done: true}
+	console.log(a.next()); //{value: undefined, done: true}
+
+	*/
+
+
+	//例11 -- 实现第一次 next(attr) attr就有效果 
+	/*
+		function wrapper(generatorFunction){
+			return function(){
+				let generatorObject = generatorFunction();
+				generatorObject.next();
+				return generatorObject;
+			};
+		}
+
+		const wrapped = wrapper(function * (){
+			console.log(`First Input ${yield}`);
+			return `DONE`;
+		});
+
+		wrapped().next('hello ~ !'); //First Input hello ~ !
+	*/
+
+	//例12 -- next(attr) 传参数的使用
+ 	/*
+	function * dataConsumer()
+	{
+		console.log('Started');
+		console.log(`1. ${yield}`);
+		console.log(`2. ${yield}`);
+
+		return  `result`;
+	}
+
+	let genObj = dataConsumer();
+
+	genObj.next();  //Started  - 执行在第一个yield前面的所有内容
+	genObj.next('a'); //1. a
+	genObj.next('b'); //2. b
+	*/
+
+	//例13 -- for...of循环自动遍历Generator函数,且此时就不再需要next方法
+	// -- 一旦next()方法返回值的属性done值为true for..of循环就会中止
+	/*
+	function * foo(){
+		yield 1;
+		yield 2;
+		yield 3;
+		yield 4;
+		yield 5;
+		yield 6;
+
+		return 7;
+	}
+
+	for(let v of foo()){
+		console.log(v); // 1 2 3 4 5 6 
+	}
+	*/
+
+	//例14. -- 遍历迭代对象 for..of (...) Array.from() function*f()
+	/*
+	function * numbers(){
+		yield 1;
+		yield 2;
+		return 3;
+		yield 4;
+	}
+
+	var arr = [...numbers()];
+	console.log(arr); //(2) [1, 2]
+
+	var arrs = Array.from(numbers());
+	console.log(arrs) //(2) [1, 2]
+
+	let [x,y] = numbers();
+	console.log(x,y) //1 2
+
+	for(i of numbers()){
+		console.log(i) //1 2
+	}
+	*/
+
+	//例15 由于for...of循环无法直接遍历原生JS对象 
+	// 所以需要下面两种方法： 
+	/*var student={
+	    name:'wujunchuan',
+	    age:22,
+	    locate:{
+	    country:'china',
+	    city:'xiamen',
+	    school:'XMUT'
+	    }
+	}
+	for(var key of Object.keys(student)){
+	    //使用Object.keys()方法获取对象key的数组
+	    console.log(key+": "+student[key]);
+	}*/
+
+	/*
+		function * objectEntries(obj)
+		{
+			let propKeys = Reflect.ownKeys(obj); //把键值取出转成数组
+
+			for(let propKey of propKeys){
+				yield [propKey,obj[propKey]];
+			}
+		}
+
+		let jane = {first:'Jane',last:'Doe'};
+		
+		for(let [key,value] of objectEntries(jane)){
+			console.log(key,value); //first Jane  last Doe
+		}
+	*/
+</script>
+</body>
+</html>
