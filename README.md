@@ -1,2 +1,2 @@
-### ES6 Tests
+### ES6 Practice
 
